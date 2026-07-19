@@ -36,12 +36,14 @@ The database schema is defined entirely in code and generated via EF Core Migrat
 
 ### Connection string & configuration
 
-The connection string and mail credentials are **not** committed to source control. They live in `Secrets.config`, which is git‑ignored and referenced from `App.config`:
+The database connection string lives directly in `App.config` (not considered sensitive for local development, since it points to a local MySQL instance). Gmail credentials, however, are kept out of source control — they live in `Secrets.config`, which is git‑ignored and merged into `App.config` via the `file` attribute.
 
 ```xml
 <!-- App.config -->
 <configuration>
-  <appSettings file="Secrets.config" />
+  <appSettings file="Secrets.config">
+    <add key="MailDbConnection" value="Server=localhost;Port=3306;Database=Mail;User=root;Password=..." />
+  </appSettings>
 </configuration>
 ```
 
@@ -50,11 +52,12 @@ The connection string and mail credentials are **not** committed to source contr
 <appSettings>
   <add key="MailUser" value="your-account@gmail.com" />
   <add key="MailPassword" value="..." />
-  <add key="MailDbConnection" value="Server=localhost;Port=3306;Database=Mail;User=root;Password=..." />
 </appSettings>
 ```
 
-To run the project locally, create your own `Secrets.config` in the project root with the three keys above.
+At runtime, .NET merges the two files automatically — `ConfigurationManager.AppSettings` exposes all three keys (`MailDbConnection`, `MailUser`, `MailPassword`) as if they came from a single file.
+
+To run the project locally, create your own `Secrets.config` in the project root with the two Gmail keys above, and adjust the `MailDbConnection` value in `App.config` to match your local MySQL setup.
 
 ## Architecture
 
