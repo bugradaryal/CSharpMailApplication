@@ -50,7 +50,7 @@ The connection string and mail credentials are **not** committed to source contr
 <appSettings>
   <add key="MailUser" value="your-account@gmail.com" />
   <add key="MailPassword" value="..." />
-  <add key="MailDbConnection" value="Server=yourServer;Database=Mail;User Id=root;Password=..." />
+  <add key="MailDbConnection" value="Server=localhost;Port=3306;Database=Mail;User=root;Password=..." />
 </appSettings>
 ```
 
