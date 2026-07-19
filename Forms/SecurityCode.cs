@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Configuration;
 using System.Windows.Forms;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
 using MimeKit.Utils;
+using mail.Services.Interfaces;
 
 namespace mail
 {
@@ -11,8 +13,8 @@ namespace mail
     {
         int sayac = 30;
         bool cıkıs;
-        GetMail sayfa3 = new GetMail();
-        DataAccess kp2 = new DataAccess();
+        GetMail sayfa3;
+        private readonly ILoginService loginService;
         int kod_istenme_sayısı;
         int rndm_tutan_deger;
         public int random_fonksiyon()
@@ -39,12 +41,13 @@ namespace mail
             message.To.Add(MailboxAddress.Parse(login_user.Instance.Eposta));
             message.Subject = "XyzMail - Güvenlik Doğrulama Kodu.";
             message.Body = builder.ToMessageBody();
-
+            var mailUser = ConfigurationManager.AppSettings["MailUser"];
+            var mailPass = ConfigurationManager.AppSettings["MailPassword"];
             using (var client = new SmtpClient())
             {
                 client.ServerCertificateValidationCallback = (s, c, h, e) => true;
                 client.Connect("smtp.gmail.com", 465, SecureSocketOptions.SslOnConnect);
-                client.Authenticate("bugraverify@gmail.com", "31082000B");
+                client.Authenticate(mailUser, mailPass);
 
                 client.Send(message);
                 client.Disconnect(true);
@@ -52,9 +55,12 @@ namespace mail
         }
 
 
-        public SecurityCode()
+        public SecurityCode(ILoginService loginService, IInboxService inboxService,
+            ISentService sentService, ITrashService trashService)
         {
             InitializeComponent();
+            this.loginService = loginService;
+            sayfa3 = new GetMail(inboxService, sentService, trashService);
         }
 
         private void Form2_Load(object sender, EventArgs e)
@@ -89,11 +95,11 @@ namespace mail
                 kod_istenme_sayısı++;
                 rndm_tutan_deger = random_fonksiyon();
                 random_sayi_yolla(rndm_tutan_deger);
-                label2.Text ="("+ kod_istenme_sayısı + ") Kod Gönderildi!";
+                label2.Text = "(" + kod_istenme_sayısı + ") Kod Gönderildi!";
                 timer1.Enabled = true;
             }
             else
-                label2.Text ="Süreyi Beklemelisin.";
+                label2.Text = "Süreyi Beklemelisin.";
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -109,7 +115,7 @@ namespace mail
                     if (int.Parse(textBox1.Text) == rndm_tutan_deger)
                     {
                         //doğrulama geçerse db işlemleri başlicak
-                        if (kp2.login_user_db_islemler(true) == true)   //db işlemleri
+                        if (loginService.GirisIslemi(true) == true)   //db işlemleri
                         {
                             label3.Text = "Güvenlik Doğrulandı!";
                             this.Close();
@@ -122,7 +128,7 @@ namespace mail
                     }
                 }
             }
-            catch(Exception)
+            catch (Exception)
             {
                 label3.Text = "Doğrulama Kodu Hatalı! - Exeption";
             }
@@ -139,7 +145,7 @@ namespace mail
         }
 
         bool move;
-        int mouse_x,mouse_y;
+        int mouse_x, mouse_y;
 
         private void pictureBox2_MouseDown(object sender, MouseEventArgs e)
         {

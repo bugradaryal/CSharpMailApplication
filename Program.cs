@@ -1,4 +1,6 @@
-﻿using System;
+﻿using mail.Services;
+using mail.Services.Interfaces;
+using System;
 using System.Windows.Forms;
 
 namespace mail
@@ -13,7 +15,13 @@ namespace mail
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new LoginScreen());
+
+            ILoginService loginService = new LoginService();
+            IInboxService inboxService = new InboxService();
+            ISentService sentService = new SentService();
+            ITrashService trashService = new TrashService();
+
+            Application.Run(new LoginScreen(loginService, inboxService, sentService, trashService));
         }
     }
 }

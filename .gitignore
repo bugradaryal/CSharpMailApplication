@@ -1,0 +1,66 @@
+## ---- Gizli / hassas dosyalar ----
+Secrets.config
+
+## ---- Build çýktýlarý ----
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Ll]og/
+[Ll]ogs/
+
+## ---- Visual Studio dosyalarý ----
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+## ---- NuGet ----
+packages/
+*.nupkg
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## ---- Test / Coverage ----
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+*.coveragexml
+
+## ---- ReSharper / Rider ----
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+.idea/
+
+## ---- Windows dosyalarý ----
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+## ---- Yayýn / yayýnlama ----
+publish/
+*.pubxml
+*.pubxml.user
+*.publishproj
+PublishScripts/
+
+## ---- EF Core / veritabaný ----
+*.mdf
+*.ldf
+*.ndf
+
+## ---- Diðer ----
+*.tmp
+*.temp
+*.bak
+*.cache
+*.log

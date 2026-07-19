@@ -13,12 +13,16 @@ using MailKit;
 using MimeKit;
 using System.IO;
 using MailKit.Search;
+using mail.DTO;
+using mail.Services.Interfaces;
 
 namespace mail
 {
     public partial class GetMail : Form
     {
-        DataAccess kp3 = new DataAccess();
+        private readonly IInboxService inboxService;
+        private readonly ISentService sentService;
+        private readonly ITrashService trashService;
         SendMail sayfa4 = new SendMail();
         bool cıkıs;
         int button_no = 1;
@@ -34,9 +38,12 @@ namespace mail
         List<trash_get_user_dosyalar> trash_kutusu_dosya = new List<trash_get_user_dosyalar>();
         List<trash_get_user_bodyfile> trash_kutusu_bodyfile = new List<trash_get_user_bodyfile>();
 
-        public GetMail()
+        public GetMail(IInboxService inboxService, ISentService sentService, ITrashService trashService)
         {
             InitializeComponent();
+            this.inboxService = inboxService;
+            this.sentService = sentService;
+            this.trashService = trashService;
         }
 
         private void Form3_Load(object sender, EventArgs e)
@@ -45,19 +52,19 @@ namespace mail
             pictureBox1.BackColor = Color.Transparent;
             listBox2.HorizontalScrollbar = true;
             listBox1.HorizontalScrollbar = true;
-            gelen_kutusu = kp3.form3_db_cekme_islemler_gelen_mail();
-            gelen_kutusu_bodyfile = kp3.form3_db_cekme_islemler_gelen_mail_bodyfile();
-            gelen_kutusu_dosya = kp3.form3_db_cekme_islemler_gelen_mail_attachment();
+            gelen_kutusu = inboxService.GetMailler();
+            gelen_kutusu_bodyfile = inboxService.GetBodyfiles();
+            gelen_kutusu_dosya = inboxService.GetEklentiler();
             listBox2.DataSource = gelen_kutusu;
             listBox2.DisplayMember = "tam_deger";
             label2.Text = $"Total: {gelen_kutusu.Count}";
             label3.Text = "Gelen Kutusu:";
-            giden_kutusu = kp3.form3_db_cekme_islemler_giden_mail();
-            giden_kutusu_bodyfile = kp3.form3_db_cekme_islemler_giden_mail_bodyfile();
-            giden_kutusu_dosya = kp3.form3_db_cekme_islemler_giden_mail_attachment();
-            trash_kutusu = kp3.form3_db_cekme_islemler_trash_mail();
-            trash_kutusu_bodyfile = kp3.form3_db_cekme_islemler_trash_mail_bodyfile();
-            trash_kutusu_dosya = kp3.form3_db_cekme_islemler_trash_mail_attachment();
+            giden_kutusu = sentService.GetMailler();
+            giden_kutusu_bodyfile = sentService.GetBodyfiles();
+            giden_kutusu_dosya = sentService.GetEklentiler();
+            trash_kutusu = trashService.GetMailler();
+            trash_kutusu_bodyfile = trashService.GetBodyfiles();
+            trash_kutusu_dosya = trashService.GetEklentiler();
 
 
             if (NetworkInterface.GetIsNetworkAvailable() == true)
@@ -71,7 +78,7 @@ namespace mail
         }
         private void button1_Click(object sender, EventArgs e)
         {
-            if(NetworkInterface.GetIsNetworkAvailable()==true)
+            if (NetworkInterface.GetIsNetworkAvailable() == true)
                 sayfa4.Show();
             else
                 MessageBox.Show("İnternet Bağlantısı olmadan Mail gönderemezsiniz!!!", "Hata");
@@ -206,7 +213,7 @@ namespace mail
             tut = System.Text.RegularExpressions.Regex.Replace(tut,
                      @"&reg;", "(r)",
                      System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-  
+
 
             tut = System.Text.RegularExpressions.Regex.Replace(tut,
                      @"&(.{2,6});", string.Empty,
@@ -252,8 +259,8 @@ namespace mail
 
 
         int metinbaslangicIndex = 0;
-        int dizi; 
-        bool hataa=false;
+        int dizi;
+        bool hataa = false;
         Graphics _graphics;
         private void button2_Click(object sender, EventArgs e)
         {
@@ -698,7 +705,7 @@ namespace mail
                 {
                     if (NetworkInterface.GetIsNetworkAvailable() == true)
                     {
-                        if(backgroundWorker1.IsBusy != true)
+                        if (backgroundWorker1.IsBusy != true)
                         {
                             try
                             {
@@ -725,7 +732,7 @@ namespace mail
                                                 inbox.Expunge();
                                                 inbox.Close();
                                                 listBox2.DataSource = null;
-                                                kp3.form3_secilen_degeri_sil_1(item.id, gelen_kutusu, gelen_kutusu_dosya, gelen_kutusu_bodyfile);        //silmek yerine databasede silinenlere ekle dicez
+                                                inboxService.CopeTasi(item.id, gelen_kutusu, gelen_kutusu_dosya, gelen_kutusu_bodyfile);        //silmek yerine databasede silinenlere ekle dicez
                                                 gelen_kutusu.Remove(item);
                                                 listBox2.DataSource = gelen_kutusu;
                                                 listBox2.DisplayMember = "tam_deger";
@@ -741,7 +748,7 @@ namespace mail
                                         inbox.Open(FolderAccess.ReadWrite);
                                         IList<UniqueId> uids = inbox.Search(SearchQuery.All);
                                         var item = (mail_send_user)listBox2.SelectedValue;
-                                        for (int i = 0; i < giden_kutusu.Count-1; i++)
+                                        for (int i = 0; i < giden_kutusu.Count - 1; i++)
                                         {
                                             if (item.id == giden_kutusu[i].id)
                                             {
@@ -752,7 +759,7 @@ namespace mail
                                                 inbox.Expunge();
                                                 inbox.Close();
                                                 listBox2.DataSource = null;
-                                                kp3.form3_secilen_degeri_sil_2(item.id, giden_kutusu, giden_kutusu_dosya, giden_kutusu_bodyfile);     
+                                                sentService.CopeTasi(item.id, giden_kutusu, giden_kutusu_dosya, giden_kutusu_bodyfile);
                                                 giden_kutusu.Remove(item);
                                                 listBox2.DataSource = giden_kutusu;
                                                 listBox2.DisplayMember = "tam_deger";
@@ -768,7 +775,7 @@ namespace mail
                                         inbox.Open(FolderAccess.ReadWrite);
                                         IList<UniqueId> uids = inbox.Search(SearchQuery.All);
                                         var item = (trash_get_user)listBox2.SelectedValue;
-                                        for (int i = 0; i < trash_kutusu.Count-1; i++)
+                                        for (int i = 0; i < trash_kutusu.Count - 1; i++)
                                         {
                                             if (item.id == trash_kutusu[i].id)
                                             {
@@ -777,7 +784,7 @@ namespace mail
                                                 inbox.Expunge();
                                                 inbox.Close();
                                                 listBox2.DataSource = null;
-                                                kp3.form3_secilen_degeri_sil_3(item.id);  
+                                                trashService.KaliciSil(item.id);
                                                 trash_kutusu.Remove(item);
                                                 listBox2.DataSource = trash_kutusu;
                                                 listBox2.DisplayMember = "tam_deger";
@@ -787,26 +794,26 @@ namespace mail
                                     }
                                 }
                             }
-                            catch (Exception) {  }
+                            catch (Exception) { }
                         }
                     }
                     else
                     {
-                        if(button_no == 1)
+                        if (button_no == 1)
                         {
                             var item = (mail_get_user)listBox2.SelectedValue;
                             listBox2.DataSource = null;
-                            kp3.form3_secilen_degeri_sil_1(item.id, gelen_kutusu, gelen_kutusu_dosya, gelen_kutusu_bodyfile);
+                            inboxService.CopeTasi(item.id, gelen_kutusu, gelen_kutusu_dosya, gelen_kutusu_bodyfile);
                             gelen_kutusu.Remove(item);
                             listBox2.DataSource = gelen_kutusu;
                             listBox2.DisplayMember = "tam_deger";
                             label2.Text = $"Total: {gelen_kutusu.Count}";
                         }
-                        else if(button_no == 2)
+                        else if (button_no == 2)
                         {
                             var item = (mail_send_user)listBox2.SelectedValue;
                             listBox2.DataSource = null;
-                            kp3.form3_secilen_degeri_sil_2(item.id, giden_kutusu, giden_kutusu_dosya, giden_kutusu_bodyfile);
+                            sentService.CopeTasi(item.id, giden_kutusu, giden_kutusu_dosya, giden_kutusu_bodyfile);
                             giden_kutusu.Remove(item);
                             listBox2.DataSource = giden_kutusu;
                             listBox2.DisplayMember = "tam_deger";
@@ -816,7 +823,7 @@ namespace mail
                         {
                             var item = (trash_get_user)listBox2.SelectedValue;
                             listBox2.DataSource = null;
-                            kp3.form3_secilen_degeri_sil_3(item.id);
+                            trashService.KaliciSil(item.id);
                             trash_kutusu.Remove(item);
                             listBox2.DataSource = trash_kutusu;
                             listBox2.DisplayMember = "tam_deger";
@@ -828,9 +835,9 @@ namespace mail
                     trash_kutusu_bodyfile.Clear();
                     trash_kutusu_dosya.Clear();
 
-                    trash_kutusu = kp3.form3_db_cekme_islemler_trash_mail();
-                    trash_kutusu_bodyfile = kp3.form3_db_cekme_islemler_trash_mail_bodyfile();
-                    trash_kutusu_dosya = kp3.form3_db_cekme_islemler_trash_mail_attachment();
+                    trash_kutusu = trashService.GetMailler();
+                    trash_kutusu_bodyfile = trashService.GetBodyfiles();
+                    trash_kutusu_dosya = trashService.GetEklentiler();
                 }
             }
         }
@@ -871,52 +878,52 @@ namespace mail
                 client.Authenticate(login_user.Instance.Eposta, login_user.Instance.sifre);
                 IMailFolder inbox = null;
                 backgroundWorker1.ReportProgress(10);
-                for (int i =1; i<4; i++)
+                for (int i = 1; i < 4; i++)
                 {
                     //inbox.close() gereksiz - sunucu otomatik olarak eski klasörü kapatıyor. https://stackoverflow.com/questions/29490638/mailkit-imailfolder-close-throws-exception  - jstedfast 12/06/2021 18:15
                     if (i == 1)
                     {
                         inbox = client.Inbox;
                         get_mails(inbox, client);
-                        kp3.form3_db_ekleme_islemler_gelen_mesaj(toplam_mesaj, mail_tut, mail_bodyfile_tut, mail_attachment_tut);
+                        inboxService.Senkronize(toplam_mesaj, mail_tut, mail_bodyfile_tut, mail_attachment_tut);
                         gelen_kutusu.Clear();
                         gelen_kutusu_bodyfile.Clear();
                         gelen_kutusu_dosya.Clear();
-                        gelen_kutusu = kp3.form3_db_cekme_islemler_gelen_mail();
+                        gelen_kutusu = inboxService.GetMailler();
                         backgroundWorker1.ReportProgress(20);
-                        gelen_kutusu_bodyfile = kp3.form3_db_cekme_islemler_gelen_mail_bodyfile();
+                        gelen_kutusu_bodyfile = inboxService.GetBodyfiles();
                         backgroundWorker1.ReportProgress(30);
-                        gelen_kutusu_dosya = kp3.form3_db_cekme_islemler_gelen_mail_attachment();
+                        gelen_kutusu_dosya = inboxService.GetEklentiler();
                         backgroundWorker1.ReportProgress(40);
                     }
-                    if(i==2)
+                    if (i == 2)
                     {
                         inbox = client.GetFolder(SpecialFolder.Sent);
                         get_mails(inbox, client);
-                        kp3.form3_db_ekleme_islemler_gonderilen_mesaj(toplam_mesaj, mail_tut, mail_bodyfile_tut, mail_attachment_tut);
+                        sentService.Senkronize(toplam_mesaj, mail_tut, mail_bodyfile_tut, mail_attachment_tut);
                         giden_kutusu.Clear();
                         giden_kutusu_bodyfile.Clear();
                         giden_kutusu_dosya.Clear();
-                        giden_kutusu = kp3.form3_db_cekme_islemler_giden_mail();
+                        giden_kutusu = sentService.GetMailler();
                         backgroundWorker1.ReportProgress(50);
-                        giden_kutusu_bodyfile = kp3.form3_db_cekme_islemler_giden_mail_bodyfile();
+                        giden_kutusu_bodyfile = sentService.GetBodyfiles();
                         backgroundWorker1.ReportProgress(60);
-                        giden_kutusu_dosya = kp3.form3_db_cekme_islemler_giden_mail_attachment();
+                        giden_kutusu_dosya = sentService.GetEklentiler();
                         backgroundWorker1.ReportProgress(70);
                     }
                     if (i == 3)
                     {
                         inbox = client.GetFolder(SpecialFolder.Trash);
                         get_mails(inbox, client);
-                        kp3.form3_db_ekleme_islemler_trash_mesaj(toplam_mesaj, mail_tut, mail_bodyfile_tut, mail_attachment_tut);
+                        trashService.Senkronize(toplam_mesaj, mail_tut, mail_bodyfile_tut, mail_attachment_tut);
                         trash_kutusu.Clear();
                         trash_kutusu_bodyfile.Clear();
                         trash_kutusu_dosya.Clear();
-                        trash_kutusu = kp3.form3_db_cekme_islemler_trash_mail();
+                        trash_kutusu = trashService.GetMailler();
                         backgroundWorker1.ReportProgress(80);
-                        trash_kutusu_bodyfile = kp3.form3_db_cekme_islemler_trash_mail_bodyfile();
+                        trash_kutusu_bodyfile = trashService.GetBodyfiles();
                         backgroundWorker1.ReportProgress(90);
-                        trash_kutusu_dosya = kp3.form3_db_cekme_islemler_trash_mail_attachment();
+                        trash_kutusu_dosya = trashService.GetEklentiler();
                         backgroundWorker1.ReportProgress(100);
                     }
                 }
@@ -1147,11 +1154,11 @@ namespace mail
 
         private void button6_Click(object sender, EventArgs e)
         {
-            if(basıldımı == false)
+            if (basıldımı == false)
             {
                 if (NetworkInterface.GetIsNetworkAvailable() == true)
                 {
-                    if(backgroundWorker1.IsBusy == false)
+                    if (backgroundWorker1.IsBusy == false)
                     {
                         basıldımı = true;
                         label1.Text = "Mailler güncelleniyor...";
@@ -1172,17 +1179,17 @@ namespace mail
                     trash_kutusu_bodyfile.Clear();
                     trash_kutusu_dosya.Clear();
                     button6.BorderColor = Color.DarkGreen;
-                    gelen_kutusu = kp3.form3_db_cekme_islemler_gelen_mail();
-                    gelen_kutusu_bodyfile = kp3.form3_db_cekme_islemler_gelen_mail_bodyfile();
-                    gelen_kutusu_dosya = kp3.form3_db_cekme_islemler_gelen_mail_attachment();
+                    gelen_kutusu = inboxService.GetMailler();
+                    gelen_kutusu_bodyfile = inboxService.GetBodyfiles();
+                    gelen_kutusu_dosya = inboxService.GetEklentiler();
                     label1.Text = "Mailler güncelleniyor  -   35%";
-                    giden_kutusu = kp3.form3_db_cekme_islemler_giden_mail();
-                    giden_kutusu_bodyfile = kp3.form3_db_cekme_islemler_giden_mail_bodyfile();
-                    giden_kutusu_dosya = kp3.form3_db_cekme_islemler_giden_mail_attachment();
+                    giden_kutusu = sentService.GetMailler();
+                    giden_kutusu_bodyfile = sentService.GetBodyfiles();
+                    giden_kutusu_dosya = sentService.GetEklentiler();
                     label1.Text = "Mailler güncelleniyor  -   75%";
-                    trash_kutusu = kp3.form3_db_cekme_islemler_trash_mail();
-                    trash_kutusu_bodyfile = kp3.form3_db_cekme_islemler_trash_mail_bodyfile();
-                    trash_kutusu_dosya = kp3.form3_db_cekme_islemler_trash_mail_attachment();
+                    trash_kutusu = trashService.GetMailler();
+                    trash_kutusu_bodyfile = trashService.GetBodyfiles();
+                    trash_kutusu_dosya = trashService.GetEklentiler();
                     label1.Text = "Mailler güncelleniyor  -   100%";
                     button6.BorderColor = Color.Black;
                     label1.Text = "Mailler Güncellendi !!";
@@ -1220,7 +1227,7 @@ namespace mail
                     {
                         if (NetworkInterface.GetIsNetworkAvailable() == true)
                         {
-                            if(backgroundWorker1.IsBusy != true)
+                            if (backgroundWorker1.IsBusy != true)
                             {
                                 if (button_no == 3)
                                 {
@@ -1243,19 +1250,19 @@ namespace mail
                                                     var matchFolder = client.GetFolder(SpecialFolder.Sent);
                                                     if (matchFolder != null)
                                                         inbox.MoveTo(uids[u], matchFolder);
-                                                    kp3.form3_secilen_degeri_geri_yukle_2(item.id, trash_kutusu, trash_kutusu_dosya, trash_kutusu_bodyfile);
+                                                    sentService.GeriYukle(item.id, trash_kutusu, trash_kutusu_dosya, trash_kutusu_bodyfile);
                                                 }
                                                 else
                                                 {
                                                     var matchFolder = client.Inbox;
                                                     if (matchFolder != null)
                                                         inbox.MoveTo(uids[u], matchFolder);
-                                                    kp3.form3_secilen_degeri_geri_yukle_1(item.id, trash_kutusu, trash_kutusu_dosya, trash_kutusu_bodyfile);
+                                                    inboxService.GeriYukle(item.id, trash_kutusu, trash_kutusu_dosya, trash_kutusu_bodyfile);
                                                 }
                                                 inbox.Expunge();
                                                 inbox.Close();
                                                 listBox2.DataSource = null;
-                                                kp3.form3_secilen_degeri_sil_3(item.id);
+                                                trashService.KaliciSil(item.id);
                                                 trash_kutusu.Remove(item);
                                                 listBox2.DataSource = trash_kutusu;
                                                 listBox2.DisplayMember = "tam_deger";
@@ -1275,14 +1282,14 @@ namespace mail
                                 var item = (trash_get_user)listBox2.SelectedValue;
                                 if (item.yollayan_kisi == login_user.Instance.Eposta)
                                 {
-                                    kp3.form3_secilen_degeri_geri_yukle_2(item.id, trash_kutusu, trash_kutusu_dosya, trash_kutusu_bodyfile);
+                                    sentService.GeriYukle(item.id, trash_kutusu, trash_kutusu_dosya, trash_kutusu_bodyfile);
                                 }
                                 else
                                 {
-                                    kp3.form3_secilen_degeri_geri_yukle_1(item.id, trash_kutusu, trash_kutusu_dosya, trash_kutusu_bodyfile);
+                                    inboxService.GeriYukle(item.id, trash_kutusu, trash_kutusu_dosya, trash_kutusu_bodyfile);
                                 }
                                 listBox2.DataSource = null;
-                                kp3.form3_secilen_degeri_sil_3(item.id);
+                                trashService.KaliciSil(item.id);
                                 trash_kutusu.Remove(item);
                                 listBox2.DataSource = trash_kutusu;
                                 listBox2.DisplayMember = "tam_deger";
@@ -1290,7 +1297,7 @@ namespace mail
                             }
                         }
                     }
-                    catch (Exception ) { }
+                    catch (Exception) { }
                     gelen_kutusu.Clear();
                     gelen_kutusu_bodyfile.Clear();
                     gelen_kutusu_dosya.Clear();
@@ -1300,15 +1307,15 @@ namespace mail
                     trash_kutusu.Clear();
                     trash_kutusu_bodyfile.Clear();
                     trash_kutusu_dosya.Clear();
-                    gelen_kutusu = kp3.form3_db_cekme_islemler_gelen_mail();
-                    gelen_kutusu_bodyfile = kp3.form3_db_cekme_islemler_gelen_mail_bodyfile();
-                    gelen_kutusu_dosya = kp3.form3_db_cekme_islemler_gelen_mail_attachment();
-                    giden_kutusu = kp3.form3_db_cekme_islemler_giden_mail();
-                    giden_kutusu_bodyfile = kp3.form3_db_cekme_islemler_giden_mail_bodyfile();
-                    giden_kutusu_dosya = kp3.form3_db_cekme_islemler_giden_mail_attachment();
-                    trash_kutusu = kp3.form3_db_cekme_islemler_trash_mail();
-                    trash_kutusu_bodyfile = kp3.form3_db_cekme_islemler_trash_mail_bodyfile();
-                    trash_kutusu_dosya = kp3.form3_db_cekme_islemler_trash_mail_attachment();
+                    gelen_kutusu = inboxService.GetMailler();
+                    gelen_kutusu_bodyfile = inboxService.GetBodyfiles();
+                    gelen_kutusu_dosya = inboxService.GetEklentiler();
+                    giden_kutusu = sentService.GetMailler();
+                    giden_kutusu_bodyfile = sentService.GetBodyfiles();
+                    giden_kutusu_dosya = sentService.GetEklentiler();
+                    trash_kutusu = trashService.GetMailler();
+                    trash_kutusu_bodyfile = trashService.GetBodyfiles();
+                    trash_kutusu_dosya = trashService.GetEklentiler();
                 }
             }
         }

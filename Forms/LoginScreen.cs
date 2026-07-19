@@ -5,20 +5,33 @@ using System.Net.NetworkInformation;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using System.Drawing;
+using mail.Services.Interfaces;
 
 namespace mail
 {
     public partial class LoginScreen : Form
     {
-        DataAccess kp1 = new DataAccess();
+        private readonly ILoginService loginService;
+        private readonly IInboxService inboxService;
+        private readonly ISentService sentService;
+        private readonly ITrashService trashService;
+
         string pc_name, ip, posta = "", sifre, db_postadeger, tekrar_sifre;
         bool hata_varmı = false, cıkıs;
-        SecurityCode sayfa2 = new SecurityCode();
-        GetMail sayfa3 = new GetMail();
+        SecurityCode sayfa2;
+        GetMail sayfa3;
 
-        public LoginScreen()
+        public LoginScreen(ILoginService loginService, IInboxService inboxService,
+            ISentService sentService, ITrashService trashService)
         {
             InitializeComponent();
+            this.loginService = loginService;
+            this.inboxService = inboxService;
+            this.sentService = sentService;
+            this.trashService = trashService;
+
+            sayfa2 = new SecurityCode(loginService, inboxService, sentService, trashService);
+            sayfa3 = new GetMail(inboxService, sentService, trashService);
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -28,18 +41,17 @@ namespace mail
             textBox3.UseSystemPasswordChar = true;
             try // database bağlantısı kontrolü
             {
-                kp1.Connection();
+                pc_name = Environment.MachineName;
+                ip = Dns.GetHostAddresses(Environment.MachineName)[1].ToString();
+                login_user.Instance.IPV4 = ip;
+                login_user.Instance.pc_user_name = pc_name;
+
+                db_postadeger = loginService.BilgisayarDegerKontrol(ip, pc_name);
             }
             catch (Exception)
             {
                 label4.Text = "Database bağlantı hatası!";
             }
-            pc_name = Environment.MachineName;
-            ip = Dns.GetHostAddresses(Environment.MachineName)[1].ToString();
-            login_user.Instance.IPV4 = ip;
-            login_user.Instance.pc_user_name = pc_name;
-
-            db_postadeger = kp1.bilgisayar_deger_kontrol(ip, pc_name);
 
             if (db_postadeger == "")
                 textBox1.Text = "E posta giriniz...";
@@ -53,7 +65,7 @@ namespace mail
         public void işlemler()
         {
             posta = textBox1.Text;
-            if (posta == "" || posta == "E posta giriniz...") 
+            if (posta == "" || posta == "E posta giriniz...")
             {
                 label4.ForeColor = Color.Maroon;
                 label4.Text = "Eposta kısmı boş geçilemez!";
@@ -77,7 +89,7 @@ namespace mail
                             client.Authenticate(login_user.Instance.Eposta, login_user.Instance.sifre);
                             client.Disconnect(true);
                         }
-                        catch(Exception)
+                        catch (Exception)
                         {
                             hata_varmı = true;
                         }
@@ -94,7 +106,7 @@ namespace mail
                     }
                     else
                     {
-                        if (kp1.login_user_db_islemler(false) == true)
+                        if (loginService.GirisIslemi(false) == true)
                         {
                             sayfa3.Show();
                             this.Hide();
@@ -152,7 +164,7 @@ namespace mail
             DialogResult dialogResult = MessageBox.Show("Çıkış Yapmak İstediğinize Emin misiniz?", "Çıkış", MessageBoxButtons.YesNo);
             if (dialogResult == DialogResult.Yes)
             {
-                cıkıs = true; 
+                cıkıs = true;
             }
             if (cıkıs == true)
                 Environment.Exit(1);

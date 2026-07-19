@@ -1,4 +1,5 @@
-﻿using MailKit.Net.Smtp;
+﻿using mail.DTO;
+using MailKit.Net.Smtp;
 using MailKit.Security;
 using MarkupConverter;
 using MimeKit;
@@ -59,8 +60,6 @@ namespace mail
             richTextBox1.SelectionColor = colorDialog1.Color;
         }
 
-        DataAccess kp4 = new DataAccess();
-        mail_send_user mail1 = new mail_send_user();
         List<string> attachment_dondur = new List<string>();
         private void Form4_Load(object sender, EventArgs e)
         {
@@ -200,7 +199,7 @@ namespace mail
 
         }
         Graphics _graphics;
-        List<form4_bodyfile_tut> bfile = new List<form4_bodyfile_tut>();
+        List<mail_file_transfer> bfile = new List<mail_file_transfer>();
         private void button6_Click(object sender, EventArgs e)  //richtext box içine resim ekleme işlemleri
         {
             try
@@ -241,8 +240,8 @@ namespace mail
                     richTextBox1.SelectedRtf = ab.ToString();
                     metinbaslangicIndex = 0;
                     string rtf_sadelesmis_byte = ExtractImgRtf(rt.Rtf);  //rtf içinden byte çekince ilk değerinden farklı değer çıkıyor...(o yüzden içinden çekmek zorundayım)
-                     
-                    bfile.Add(new form4_bodyfile_tut
+
+                    bfile.Add(new mail_file_transfer
                     {
                         file_name = file.FileName,
                         bodyfile_string = rtf_sadelesmis_byte,
