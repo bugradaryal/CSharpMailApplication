@@ -1,4 +1,4 @@
-# Desktop Email Application - C# Mail Application (XyzMail)
+# C# Desktop Email Application - XyzMail-Desktop
 
 A Windows Forms desktop email client built on top of Gmail (IMAP/SMTP), with local caching of messages in a SQL Server database via Entity Framework Core.
 
